@@ -515,29 +515,6 @@ If the type is some other handler type, these are called as:
 
 =cut
 
-## Cheat on older X::S::B's that don't have this method.
-##
-## TODO: Check X::S::B's version number :).
-my $fake_xsb_set_handler = (
-         XML::SAX::Base->can( "new" )
-    && ! XML::SAX::Base->can( "set_handler" )
-);
-
-eval '<<SET_HANDLER_END' if $fake_xsb_set_handler;
-sub XML::SAX::Base::set_handler {
-    my $self = shift;
-    my ( $handler, $type ) = reverse @_;
-
-    $type ||= "Handler";
-
-    $self->{Methods} = {};
-    $self->{$type} = $handler;
-
-    return undef;
-}
-
-
-
 sub set_handler {
     my $self = shift;
     my ( $handler, $type ) = reverse @_;

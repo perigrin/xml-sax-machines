@@ -5,6 +5,8 @@ Makefile.PL
 README
 TODO
 examples/output_to_process
+examples/xml_records_thru_libxslt
+examples/xml_records_to_data_structures
 lib/XML/Filter/Distributor.pm
 lib/XML/Filter/DocSplitter.pm
 lib/XML/Filter/Merger.pm

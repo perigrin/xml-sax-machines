@@ -1,5 +1,11 @@
 CHANGES file for XML-SAX-Machines
 
+0.311
+    - Require at least XML::SAX::Base 1.02, removed X::S::B::set_handler
+      workaround.
+    - Require XML::SAX 0.05, not 0.3
+    - Added two more examples to MANIFEST
+
 0.31 Tue Jan 22 12:27:55 EST 2002
     - ByRecords now counts stack depth accurately.  Tested with patched
     XML::Filter::LibXSLT.

@@ -4,8 +4,9 @@ WriteMakefile(
     NAME          => 'XML::SAX::Machines',
     VERSION_FROM  => 'lib/XML/SAX/Machines.pm',
     PREREQ_PM => {
-       "XML::SAX"          => 0.3,
-       "XML::SAX::Writer"  => 0.39,
+       "XML::SAX"          => 0.05,
+       "XML::SAX::Base"    => 1.02,  ## Need set_handler
+       "XML::SAX::Writer"  => 0.39,  ## lotsa bugfixes.
     },
 );
 
