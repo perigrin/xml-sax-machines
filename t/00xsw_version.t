@@ -2,7 +2,7 @@ use Test;
 use XML::SAX::Writer;
 
 my $v_ok = ! ( defined $XML::SAX::Writer::VERSION 
-    && $XML::SAX::Writer::VERSION == 0.39
+    && $XML::SAX::Writer::VERSION == 0.41
 );
 
 unless ( $v_ok ) {

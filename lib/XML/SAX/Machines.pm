@@ -1,5 +1,7 @@
 package XML::SAX::Machines;
 
+$VERSION = 0.36;
+
 =head1 NAME
 
     XML::SAX::Machines - manage collections of SAX processors
@@ -73,9 +75,7 @@ Here are the machines this module knows about:
 use strict;
 use Carp;
 use Exporter;
-use vars qw( $debug $VERSION @ISA @EXPORT_OK %EXPORT_TAGS );
-
-$VERSION = 0.35;
+use vars qw( $debug @ISA @EXPORT_OK %EXPORT_TAGS );
 
 ## TODO: Load this mapping from the config file, or generalize 
 ## this.
