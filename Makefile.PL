@@ -6,7 +6,7 @@ WriteMakefile(
     PREREQ_PM => {
        "XML::SAX"          => 0.05,
        "XML::SAX::Base"    => 1.02,  ## Need set_handler
-       "XML::SAX::Writer"  => 0.39,  ## lotsa bugfixes.
+       "XML::SAX::Writer"  => 0.4100001,  ## lotsa bugfixes, 0.41 very naughty
     },
 );
 

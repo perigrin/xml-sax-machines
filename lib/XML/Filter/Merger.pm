@@ -6,49 +6,98 @@ XML::Filter::Merger - Assemble multiple SAX streams in to one document
 
 =head1 SYNOPSIS
 
-    ## See XML::SAX::Manifold and XML::SAX::Pipeline for easy ways
-    ## to use this processor.  XML::SAX::Manifold uses this
-    ## processor to implement multipass document processing, for
-    ## instance.
+    ## See XML::SAX::Manifold and XML::SAX::ByRecord for easy ways
+    ## to use this processor.
 
     my $w = XML::SAX::Writer->new(           Output => \*STDOUT );
-    my $h = XML::Filter::Merger->new(           Handler => $w );
+    my $h = XML::Filter::Merger->new(        Handler => $w );
     my $p = XML::SAX::ParserFactory->parser( Handler => $h );
 
+    ## To insert second and later docs in to the first doc:
     $h->start_manifold_document( {} );
     $p->parse_file( $_ ) for @ARGV;
     $h->end_manifold_document( {} );
+
+    ## To insert multiple docs inline (especially useful if
+    ## a subclass does the inline parse):
+    $h->start_document( {} );
+    $h->start_element( { ... } );
+    ....
+    $h->start_element( { Name => "foo", ... } );
+    $p->parse_uri( $uri );   ## Body of $uri inserted in <foo>...</foo>
+    $h->end_element( { Name => "foo", ... } );
+    ...
         
 
 =head1 DESCRIPTION
 
-Combines several documents in to one "manifold" document.  This is done
-by defining two non-SAX events--C<start_manifold_document> and
-C<end_manifold_document>--that are called before the first document to be
-combined and after the last one, respectively.
+Combines several documents in to one "manifold" document.  This can be
+done in two ways, both of which start by parsing a master document in to
+which (the guts of) secondary documents will be inserted.
 
-The first full document to be started after the
+=head2 Inlining Secondary Documents
+
+The most SAX-like way is to simply pause the parsing of the master
+document between the two events where you want to insert a secondard
+document and parse the complete secondard document right then and there
+so it's events are inserted in the pipeline at the right spot.
+XML::Filter::Merger only passes the content of the secondary document's
+root element:
+
+    my $h = XML::Filter::Merger->new( Handler => $w );
+    $h->start_document( {} );
+    $h->start_element( { Name => "foo1" } );
+        $p->parse_string( "<foo2><baz /></foo2>" );
+    $h->end_element( { Name => "foo1" } );
+    $h->end_document( {} );
+
+results in C<$w> seeing a document like C<< <foo1><baz/></foo1> >>.
+
+This technique is especially useful when subclassing XML::Filter::Merger
+to implement XInclude-like behavior.  Here's a useless example that
+inserts some content after each C<characters()> event:
+
+        package Subclass;
+
+        use vars qw( @ISA );
+
+        @ISA = qw( XML::Filter::Merger );
+
+        sub characters {
+            my $self = shift;
+
+            my $r = $self->SUPER::characters( @_ );
+
+            $self->set_include_all_roots( 1 );
+
+            XML::SAX::PurePerl->new( Handler => $self )->parse_string( "<hey/>" );
+            return $r;
+        }
+
+Feeding this filter C<< <foo> </foo> >> results in C<< <foo>
+<hey/></foo> >>.  We've called C<set_include_all_roots( 1 )> to get the
+secondary document's root element included.
+
+=head2 Inserting Manifold Documents
+
+A more involved way suitable to handling consecutive documents it to use
+the two non-SAX events--C<start_manifold_document> and
+C<end_manifold_document>--that are called before the first document to
+be combined and after the last one, respectively.
+
+The first document to be started after the
 C<start_manifold_document> is the master document and is emitted as-is
-except that it will contain the contents of all of the other documents.
+except that it will contain the contents of all of the other documents
+just before the root C<end_element()> tag.  For example:
 
-Unlike a normal SAX filter, however, documents may be inserted by
-issuing a C<start_document> ... C<end_document> event sequence inside
-the root element of the master document.  The bodies of such documents
-are inserted inline in the master document without the root element or
-events before/after the root element.  The root element may be inserted
-by calling C<set_include_all_roots> with a true value.  This is how the
-L<ByRecord|XML::SAX::ByRecord> SAX machine works, and is as though an
-XInclude directive had been placed in the master document at the point
-where the secondary document's events were received.
+    $h->start_manifold_document( {} );
+    $p->parse_string( "<foo1><bar /></foo1>" );
+    $p->parse_string( "<foo2><baz /></foo2>" );
+    $h->end_manifold_document( {} );
 
-Additionally, any documents received after the master document's
-C<end_document> and before the C<end_manifold_document> are inserted
-just before the master document's root C<end_element>.  To accomplish
-this, the master document's root C<end_element> and all remaining events
-are buffered and only forwarded when the C<end_manifold_document> is
-received.
+results in C<< <foo><bar /><baz /></foo> >>.
 
-=head1 DETAILED DESCRIPTION
+=head2 The details
 
 In case the above was a bit vague, here are the rules this filter lives
 by.
@@ -175,24 +224,49 @@ sub _logging() { 0 };
 
 =cut
 
+sub new {
+    my $self = shift->SUPER::new( @_ );
+    $self->reset;
+    return $self;
+}
+
+=item reset
+
+Clears the filter after an accident.  Useful when reusing the filter.
+new() and start_manifold_document() both call this.
+
+=cut
+
+sub reset {
+    my $self = shift;
+    $self->{DocumentDepth}           = 0;
+    $self->{DocumentCount}           = 0;
+    $self->{TailEvents}              = undef;
+    $self->{ManifoldDocumentStarted} = 0;
+    $self->{Cutting}                 = 0;
+    $self->{Depth}                   = 0;
+    $self->{RootEltSeen}             = 0;
+    $self->{AutoReset}               = 0;
+}
+
 =item start_manifold_document
 
-This must be called before the first document's start_document arrives.
+This must be called before the master document's C<start_document()>
+if you want XML::Filter::Merger to insert documents that will be sent
+after the master document.
 
-It is passed an empty ({}) data structure, which is passed on to the
-handler's start_document.
+It does not need to be called if you are going to insert secondary
+documents by sending their events in the midst of processing the master
+document.
+
+It is passed an empty ({}) data structure.
 
 =cut
 
 sub start_manifold_document {
     my $self = shift;
-    $self->{DocumentDepth}           = 0;
-    $self->{DocumentCount}           = 0;
-    $self->{TailEvents}              = undef;
+    $self->reset;
     $self->{ManifoldDocumentStarted} = 1;
-    $self->{Cutting}                 = 0;
-    $self->{Depth}                   = 0;
-    $self->{RootEltSeen}             = 0;
 
 ## A little fudging here until XML::SAX::Base gets a new release
 $self->{Methods} = {};
@@ -249,7 +323,8 @@ sub _saving {
     my $self = shift;
 
     return
-        $self->{DocumentCount} == 1
+        $self->{ManifoldDocumentStarted}
+        && $self->{DocumentCount} == 1
         && $self->{DocumentDepth} == 1
         && $self->{RootEltSeen};
 }
@@ -269,8 +344,7 @@ sub _push {
 sub start_document {
     my $self = shift;
 
-    warn "start_document received without a start_manifold_document"
-        unless $self->{ManifoldDocumentStarted};
+    $self->reset if $self->{AutoReset};
 
     push @{$self->{DepthStack}}, $self->{Depth};
 
@@ -357,6 +431,7 @@ sub end_manifold_document {
 	}
     }
     $self->{ManifoldDocumentStarted} = 0;
+    $self->{AutoReset} = 1;
     return $r;
 }
 

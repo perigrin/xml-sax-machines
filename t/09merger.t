@@ -8,19 +8,20 @@ use UNIVERSAL;
 
 my $p;
 my $h;
+my $w;
 
 my $out;
 
 my @tests = (
 sub {
-    my $w = XML::SAX::Writer->new( Output => \$out );
+    $w = XML::SAX::Writer->new( Output => \$out );
     $h = XML::Filter::Merger->new( Handler => $w );
     $p = XML::SAX::PurePerl->new( Handler => $h );
     ok UNIVERSAL::isa( $h, "XML::Filter::Merger" );
 },
 
 ##
-## default (non-IncludeAllRoots) mode
+## sequential docs in default (non-IncludeAllRoots) mode
 ##
 sub {
     $out = "";
@@ -35,7 +36,7 @@ sub {
 
 
 ##
-## default (IncludeAllRoots) mode
+## sequential, IncludeAllRoots mode
 ##
 sub {
     $out = "";
@@ -57,13 +58,12 @@ sub {
 sub {
     $out = "";
     $h->set_include_all_roots( 0 );
-    $h->start_manifold_document( {} );
+    $h->reset;
     $h->start_document( {} );
     $h->start_element( { Name => "foo1" } );
     $p->parse_string( "<foo2><baz /></foo2>" );
     $h->end_element( { Name => "foo1" } );
     $h->end_document( {} );
-    $h->end_manifold_document( {} );
 
     $out =~ m{<foo1\s*><baz\s*/></foo1\s*>}
         ? ok 1
@@ -76,13 +76,12 @@ sub {
 sub {
     $out = "";
     $h->set_include_all_roots( 1 );
-    $h->start_manifold_document( {} );
+    $h->reset;
     $h->start_document( {} );
     $h->start_element( { Name => "foo1" } );
     $p->parse_string( "<foo2><baz /></foo2>" );
     $h->end_element( { Name => "foo1" } );
     $h->end_document( {} );
-    $h->end_manifold_document( {} );
 
     $out =~ m{<foo1\s*><foo2\s*><baz\s*/></foo2\s*></foo1\s*>}
         ? ok 1
@@ -115,8 +114,45 @@ sub {
 },
 
 
+##
+## Subclassing
+##
+
+sub {
+    my $s = do {
+        package Subclass;
+
+        use vars qw( @ISA );
+
+        @ISA = qw( XML::Filter::Merger );
+
+        sub characters {
+            my $self = shift;
+
+            my $r = $self->SUPER::characters( @_ );
+
+            $self->set_include_all_roots( 1 );
+
+            XML::SAX::PurePerl->new( Handler => $self )->parse_string( "<hey/>" );
+            return $r;
+        }
+
+        __PACKAGE__ ;
+    }->new( Handler => $w );
+
+    $p->set_handler( $s );
+    $p->parse_string( "<foo> </foo>" );
+    $out =~ m{<foo\s*> <hey\s*/></foo\s*>}
+        ? ok 1
+        : ok qq{This output    $out},
+             qq{something like <foo> <hey /></foo>} ;
+},
+
+
 );
 
 plan tests => scalar @tests;
 
 $_->() for @tests;
+
+

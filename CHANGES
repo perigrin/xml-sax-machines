@@ -1,5 +1,11 @@
 CHANGES file for XML-SAX-Machines
 
+0.38 Fri Sep  6 10:05:32 EDT 2002
+    - Require XML::SAX::Writer > 0.41.
+    - Allow merger to be subclassed
+    - Remove need to call start_/end_manifold_document() if you're
+      just merging secondary documents that occur inline.
+
 0.37 Thu Sep  5 17:35:02 EDT 2002
     - Make XML::Filter::Merger handle nested documents correctly and
       tweak XML::Filter::DocSplitter to agree.
