@@ -6,7 +6,7 @@ XML::SAX::Pipeline - Manage a linear pipeline of SAX processors
 
 =head1 SYNOPSIS
 
-    use XML::SAX::Pipeline qw( Pipeline );
+    use XML::SAX::Machines qw( Pipeline );   ## Most common way
     use XML::Fitler::Foo;
 
     my $m = Pipeline(

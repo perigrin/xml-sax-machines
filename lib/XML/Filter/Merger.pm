@@ -57,22 +57,33 @@ This technique is especially useful when subclassing XML::Filter::Merger
 to implement XInclude-like behavior.  Here's a useless example that
 inserts some content after each C<characters()> event:
 
-        package Subclass;
+    package Subclass;
 
-        use vars qw( @ISA );
+    use vars qw( @ISA );
 
-        @ISA = qw( XML::Filter::Merger );
+    @ISA = qw( XML::Filter::Merger );
 
-        sub characters {
-            my $self = shift;
+    sub characters {
+        my $self = shift;
 
-            my $r = $self->SUPER::characters( @_ );
+        return $self->SUPER::characters( @_ )  ## **
+            unless $self->in_master_document;  ## **
 
-            $self->set_include_all_roots( 1 );
+        my $r = $self->SUPER::characters( @_ );
 
-            XML::SAX::PurePerl->new( Handler => $self )->parse_string( "<hey/>" );
-            return $r;
-        }
+        $self->set_include_all_roots( 1 );
+
+        XML::SAX::PurePerl->new( Handler => $self )->parse_string( "<hey/>" );
+        return $r;
+    }
+
+    ## **: It is often important to use the recursion guard shown here
+    ## to protect the decision making logic that should only be run on
+    ## the events in the master document from being run on events in the
+    ## subdocument.  Of course, if you want to apply the logic
+    ## recursively, just leave the guard code out (and, yes, in this
+    ## example, th guard code is phrased in a slightly redundant fashion,
+    ## but we want to make the idiom clear).
 
 Feeding this filter C<< <foo> </foo> >> results in C<< <foo>
 <hey/></foo> >>.  We've called C<set_include_all_roots( 1 )> to get the

@@ -50,6 +50,16 @@ my @tests = (
             "XML::SAX::Base",
             \$out
         ),
+        Pipeline(
+            "XML::SAX::Base",
+            XML::SAX::Writer->new( Output => \$out ),
+        ),
+        Pipeline(
+            "XML::SAX::Base",
+            {
+                Handler => XML::SAX::Writer->new( Output => \$out ),
+            },
+        ),
     )
 ),
 );

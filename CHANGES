@@ -1,5 +1,12 @@
 CHANGES file for XML-SAX-Machines
 
+0.41 Tue Jan 20 11:57:39 EST 2004
+    - XML::SAX::Pipeline SYNOPSIS doc fixed (reported by bplatz a t
+      agere dt com )
+    - XML::SAX::Machine now implements the Handler option to new
+      properly.  (reported by bplatz a t agere dt com )
+
+
 0.40
     - Add several state getter methods to XML::Filter::Merger to
       make subclassing easier.

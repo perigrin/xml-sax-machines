@@ -58,6 +58,14 @@ my @tests = (
             [ undef() => XML::SAX::Base->new(), 2 ],
             \$out
         ),
+        Machine(
+            [ Intake  => "XML::SAX::Base", "W" ],
+            [ "W" => XML::SAX::Writer->new( Output => \$out ) ],
+        ),
+        Machine(
+            [ Intake  => "XML::SAX::Base", "Exhaust" ],
+            { Handler => XML::SAX::Writer->new( Output => \$out ) },
+        ),
     )
 ),
 );

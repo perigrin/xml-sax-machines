@@ -188,10 +188,10 @@ sub new {
     $self->{Parts} = [];
     $self->{PartsByName} = {};  ## Mapping of names to parts
 
-    ## Set this first in case any specs have handler "Exhaust"
-    $self->set_handler( $self->{Handler} ) if $self->{Handler};
-
     $self->_compile_specs( @_ );
+
+    ## Set this last in case any specs have handler "Exhaust"
+    $self->set_handler( $self->{Handler} ) if $self->{Handler};
 
     return $self;
 }
