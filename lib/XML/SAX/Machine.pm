@@ -679,14 +679,17 @@ compile_methods __PACKAGE__, <<'EOCODE', sax_event_names "ParseMethods" ;
             unless $h;
 
         if ( $h->can( "<METHOD>" ) ) {
-            eval {
-                return $h-><METHOD>( @_ );
+            my ( $ok, @result ) = eval {
+                ( 1, wantarray
+                    ? $h-><METHOD>( @_ )
+                    : scalar $h-><METHOD>( @_ )
+                );
             };
             
             ## Not sure how/where causes me to need this next line, but
             ## in perl5.6.1 it seems necessary.
-            return "" unless $@;
-            die $@ if $@ && $@ !~ /No .*routine defined/;
+            return wantarray ? @result : $result[0] if $ok;
+            die $@ unless $@ =~ /No .*routine defined/;
             undef $@;
 
             if ( $h->isa( "XML::SAX::Base" ) ) {
@@ -761,6 +764,12 @@ sub _resolve_spec {
     my $self = shift;
     my ( $spec ) = @_;
 
+    croak "undef passed instead of a filter to ", ref( $self ), "->new()"
+        unless defined $spec;
+
+    croak "Empty filter name ('') passed to ", ref( $self ), "->new()"
+        unless length $spec;
+
     my $type = ref $spec;
 
     if (
@@ -788,17 +797,11 @@ if ( ! $type ) {
             ## delaying the new()s might help us from doing things
             ## like blowing away output files and then finding
             ## errors, for instance.
-            no strict "refs";
-            unless ( eval "require $spec; 1" ) {
-                ## Assume it was loaded somehow else if it's got some
-                ## values in residence.
-                ## TODO: be more sophisticated here
-                die $@ unless $spec->can( "new" );
-            }
+            croak $@ unless $spec->can( "new" ) || eval "require $spec";
         }
     }
     else {
-        confess "'$type' not supported in a SAX machine specification\n"
+        croak "'$type' not supported in a SAX machine specification\n"
             if exists $basic_types{$type};
     }
 
@@ -827,8 +830,6 @@ sub _push_spec {
         Handlers  => \@handlers,
     );
 
-    push @{$self->{Parts}}, $part;
-
 #    if ( grep $_ eq "Exhaust", @handlers ) {
 #        $self->{OverusedNames}->{Exhaust} ||= undef
 #            if exists $self->{PartsByName}->{Exhaust};
@@ -838,6 +839,16 @@ sub _push_spec {
 #        @handlers = grep $_ ne "Exhaust", @handlers;
 #    }
 
+    ## NOTE: This may
+    ## still return a non-reference, which is the type of processor
+    ## wanted here.  We construct those lazily below; see the docs
+    ## about order of construction.
+    my $proc = $self->_resolve_spec( $spec );
+    $part->{Processor} = $proc;
+    croak "SAX machine BUG: couldn't resolve spec '$spec'"
+        unless defined $proc;
+
+    push @{$self->{Parts}}, $part;
     $part->{Number} = $#{$self->{Parts}};
 
     if ( defined $name ) {
@@ -849,15 +860,6 @@ sub _push_spec {
 
         $self->{PartsByName}->{$name} = $self->{Parts}->[-1];
     }
-
-    ## Do this last in case it throws an exception.  NOTE: This may
-    ## still return a non-reference, which is the type of processor
-    ## wanted here.  We construct those lazily below; see the docs
-    ## about order of construction.
-    my $proc = $self->_resolve_spec( $spec );
-    $part->{Processor} = $proc;
-    croak "SAX machine BUG: couldn't resolve spec '$spec'"
-        unless defined $proc;
 
     ## This HASH is used to detect cycles even if the user uses 
     ## preconstructed references instead of named parts.

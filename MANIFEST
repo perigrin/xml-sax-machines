@@ -28,6 +28,7 @@ t/01compile_spec.t
 t/02find_part.t
 t/09machine.t
 t/09merger.t
+t/10bad_machine.t
 t/10distributor.t
 t/10docsplitter.t
 t/10pipeline.t

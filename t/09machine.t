@@ -7,6 +7,9 @@ my $m;
 
 my $out;
 
+## Make a filter that is *not* in a file that can be require()ed.
+@Foo::Filter::ISA = qw( XML::SAX::Base );
+
 my @tests = (
 (
     map {
@@ -47,6 +50,11 @@ my @tests = (
         ),
         Machine(
             [ Intake  => XML::SAX::Base->new(), 1 ],
+            [ undef() => XML::SAX::Base->new(), 2 ],
+            \$out
+        ),
+        Machine(
+            [ Intake  => "Foo::Filter",         1 ],
             [ undef() => XML::SAX::Base->new(), 2 ],
             \$out
         ),

@@ -1,5 +1,17 @@
 CHANGES file for XML-SAX-Machines
 
+0.32 Wed Mar  6 10:09:55 EST 2002
+    - fix eval { return } thinko in X::S::Machine::parse(),
+      reported by Rick Frankel <rick@rickster.com>.
+    - test for $class->can( "new" ) before doing eval "require $class"
+      awkward code highlighted by christian.glahn@uibk.ac.at
+    - Added diagnositc errors for undef or '' filter names
+    - Added t/10bad_machine.t
+    - Prevent unresolvable filters from causing later, additional,
+      confusing error messages.
+    - Add test to make sure an "empty derived class" can be specced by
+      name (this worked ok before and now; just added a test).
+
 0.311
     - Require at least XML::SAX::Base 1.02, removed X::S::B::set_handler
       workaround.
