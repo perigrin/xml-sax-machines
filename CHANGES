@@ -1,5 +1,14 @@
 CHANGES file for XML-SAX-Machines
 
+0.35 Mon Jul 22 13:10:23 EDT 2002
+    - Remove a dependency on hash order that perl5.8.0's new
+      hash algorithm exposes.  THIS AFFECTS ONLY THE TEST SUITE unless
+      you are checking for $@ =~ /.../ in order to catch/filter
+      cycle dependancy checks.
+    - Makefile.PL warn()s if XML::SAX::Writer 0.40 is detected.  It's
+      too broken.  There's also a new test suite t/00xsw_version.t to
+      barn again and fail.
+
 0.34 Thu Mar 21 09:55:46 EST 2002
     - Get Merger.pm to properly deal with events before and
       after the root element events.  Reported by

@@ -1204,7 +1204,7 @@ sub _compile_specs {
                     "->",
                     map $_->string_description, $_->[-1], @$_
                 );
-        } values %unique_cycles;
+        } map $unique_cycles{$_}, sort keys %unique_cycles;
     }
 
     delete $self->{SeenParts};
@@ -1397,7 +1397,7 @@ sub generate_description {
         $h->end_element(   $handler_elt );
     }
 
-    for ( keys %{$self->{PartsByName}} ) {
+    for ( sort keys %{$self->{PartsByName}} ) {
         if ( $self->{PartsByName}->{$_}->{Name} ne $_ ) {
         warn $self->{PartsByName}->{$_}->{Name}, " : ", $_;
             my $handler_elt = $self->pointer_elt( "alias", $_ );

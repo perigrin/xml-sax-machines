@@ -24,6 +24,7 @@ t/00config.t
 t/00eventmethodmaker.t
 t/00machines.t
 t/00valid_name.t
+t/00xsw_version.t
 t/01compile_spec.t
 t/02find_part.t
 t/09machine.t
