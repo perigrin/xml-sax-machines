@@ -141,7 +141,12 @@ SAX machines detect loops at construction time.
 
 =cut
 
+$VERSION=1.0;
+
 use strict;
+
+use constant has_named_regexp_character_classes => $] > 5.006000;
+
 use Carp;
 use UNIVERSAL;
 use XML::SAX::EventMethodMaker qw( :all );
@@ -325,14 +330,19 @@ use vars qw( $AUTOLOAD );
 
 sub DESTROY {} ## Prevent AUTOLOADing of this.
 
-sub AUTOLOAD {
-    $AUTOLOAD =~ s/.*://;
-    my $self = shift;
-    my $fc = substr( $AUTOLOAD, 0, 1 );
+my $alpha_first_char = has_named_regexp_character_classes
+	    ? "^[[:alpha:]]"
+	    : "^[a-zA-Z]";
 
+sub AUTOLOAD {
+    my $self = shift;
+
+    $AUTOLOAD =~ s/.*://;
+
+    my $fc = substr $AUTOLOAD, 0, 1;
     ## TODO: Find out how Perl determines "alphaness" and use that.
     croak ref $self, " does not provide method $AUTOLOAD"
-        unless $fc eq uc $fc && $fc =~ /[[:alpha:]]/ ;
+        unless $fc eq uc $fc && $AUTOLOAD =~ /$alpha_first_char/o;
 
     my $found = $self->find_part( $AUTOLOAD );
     return $found;
@@ -808,13 +818,16 @@ if ( ! $type ) {
     return $spec;
 }
 
+my $is_name_like = has_named_regexp_character_classes
+	    ? '^[[:alpha:]]\w*(?!\n)$'
+	    :    '^[a-zA-Z]\w*(?!\n)$';
 
 sub _valid_name($) {
     my ( $prospect ) = @_;
     return 0 unless defined $prospect && length $prospect;
     my $fc = substr $prospect, 0, 1;
     ## I wonder how close to valid Perl method names this is?
-    $fc eq uc $fc && $prospect =~ /^[[:alpha:]]\w*(?!\n)$/ ? 1 : 0;
+    ( $fc eq uc $fc && $prospect =~ /$is_name_like/o ) ? 1 : 0;
 }
 
 

@@ -1,5 +1,10 @@
 CHANGES file for XML-SAX-Machines
 
+0.33 Tue Mar 19 10:59:42 EST 2002
+    - Port back to perl5.00503 (reported by Kip Hampton
+        - no named regexp character classes ([...[:alpha:]...])
+	- can't supress "used only once, possible typo" warnings
+
 0.32 Wed Mar  6 10:09:55 EST 2002
     - fix eval { return } thinko in X::S::Machine::parse(),
       reported by Rick Frankel <rick@rickster.com>.

@@ -111,7 +111,9 @@ for (@tests) {
     
     my $got = c @$_;
 
-    my $desc = Dumper $_;
+    my $desc = [ @$_ ];
+    $desc = [ map ref $_ ? "$_" : $_, @$desc ] if $] < 5.006001;
+    $desc = Dumper $desc;
 
     if ( ref $expected ) {
         ## Older Test.pms do not know about qr// for expected values.

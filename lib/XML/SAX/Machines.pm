@@ -75,7 +75,7 @@ use Carp;
 use Exporter;
 use vars qw( $debug $VERSION @ISA @EXPORT_OK %EXPORT_TAGS );
 
-$VERSION = 0.32;
+$VERSION = 0.33;
 
 ## TODO: Load this mapping from the config file, or generalize 
 ## this.
@@ -166,15 +166,15 @@ sub _read_config {
         ProcessorClassOptions
     ) ) {
         no strict "refs";
-        local $^W = 0;  ## Quash "used only once" warnings
         
+	## I don't like creating these just to default them, but perls
+	## 5.005003 and older (at least) emit a "used only once, possible
+	## type" warngings that local $^W = 0 doesn't silence.
+	${__PACKAGE__."::ConfigDefaults::$_"} ||= {};
+	${__PACKAGE__."::SiteConfig::$_"}     ||= {};
         ${__PACKAGE__."::Config::$_"} = {
-            %{
-                ${__PACKAGE__."::ConfigDefaults::$_"} || {}
-            },
-            %{
-                ${__PACKAGE__."::SiteConfig::$_"}     || {}
-            },
+            %{ ${__PACKAGE__."::ConfigDefaults::$_"} },
+            %{ ${__PACKAGE__."::SiteConfig::$_"    } },
         };
     }
 
