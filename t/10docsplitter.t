@@ -61,10 +61,11 @@ sub {
 },
 
 sub {
+$out =~ s/^<\?.*?\?>//;
     $out =~
      m{<foo\s*>a<bar\s+id=['"]1["']\s*>B</bar>c<baz\s+id=['"]2["']\s*>D</baz>e<bat\s+id=['"]3["']\s*>F</bat>g</foo\s*>}
         ? ok 1
-        : ok qq{this outout    $out},
+        : ok qq{this output    $out},
              qq{something like <foo>a<bar id='1'>b</bar>c<baz id='2'>d</baz>e<bat id='3'>f</bat>g</foo>} ;
 },
 );

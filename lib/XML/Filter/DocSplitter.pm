@@ -63,7 +63,7 @@ use XML::SAX::Base;
 
 @ISA = qw( XML::SAX::Base );
 
-$VERSION = 0.1;
+$VERSION = 0.2;
 
 @EXPORT_OK = qw( DocSplitter );
 
@@ -190,6 +190,8 @@ sub start_document {
     $aggie->set_include_all_roots( 1 )
         if $aggie && $aggie->can( "set_include_all_roots" );
 
+    $aggie->start_document( @_ );
+
     $self->{Stack}       = [];
     $self->{Splitting}   = 0;
     $self->set_split_path( "/*/*" )
@@ -254,10 +256,16 @@ sub end_document {
     my $self = shift;
 
     my $aggie = $self->get_aggregator;
-    return $aggie->end_manifold_document( @_ )
-        if $aggie && $aggie->can( "end_manifold_document" );
 
-    return undef;
+    my $r;
+
+    if ( $aggie ) {
+        $r = $aggie->end_document( @_ );
+        $r = $aggie->end_manifold_document( @_ )
+            if $aggie->can( "end_manifold_document" );
+    }
+
+    return $r;
 }
 
 

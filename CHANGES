@@ -1,5 +1,9 @@
 CHANGES file for XML-SAX-Machines
 
+0.37 Thu Sep  5 17:35:02 EDT 2002
+    - Make XML::Filter::Merger handle nested documents correctly and
+      tweak XML::Filter::DocSplitter to agree.
+
 0.36 Tue Jul 23 14:00:47 EDT 2002
     - Correct t/xsw_version.t to test for 0.41 instead of 0.39
 

@@ -22,46 +22,148 @@ XML::Filter::Merger - Assemble multiple SAX streams in to one document
 
 =head1 DESCRIPTION
 
-Combines several documents in to one.  Here's how it works (by default):
+Combines several documents in to one "manifold" document.  This is done
+by defining two non-SAX events--C<start_manifold_document> and
+C<end_manifold_document>--that are called before the first document to be
+combined and after the last one, respectively.
 
-The first document received after the call to start_manifold_document()
-is emitted all the way up to it's closing root element tag.  This tag
-and all text, comments, PIs, etc. following it are buffered, as is the
-end_document event.
+The first full document to be started after the
+C<start_manifold_document> is the master document and is emitted as-is
+except that it will contain the contents of all of the other documents.
 
-Each additional document is stripped of everything up to and including
-its root element start_element event and from the root element
-end_element  event through the end_document event.  All events between
-the root element start_element and end_element events are stripped.
+Unlike a normal SAX filter, however, documents may be inserted by
+issuing a C<start_document> ... C<end_document> event sequence inside
+the root element of the master document.  The bodies of such documents
+are inserted inline in the master document without the root element or
+events before/after the root element.  The root element may be inserted
+by calling C<set_include_all_roots> with a true value.  This is how the
+L<ByRecord|XML::SAX::ByRecord> SAX machine works, and is as though an
+XInclude directive had been placed in the master document at the point
+where the secondary document's events were received.
 
-When the end_manifold_document() method is called, the events that were
-buffered from the first document are then emitted, resulting in a well
-formed XML document that has the guts from each of the input documents
-sandwiched between the head and tail of the first document.
+Additionally, any documents received after the master document's
+C<end_document> and before the C<end_manifold_document> are inserted
+just before the master document's root C<end_element>.  To accomplish
+this, the master document's root C<end_element> and all remaining events
+are buffered and only forwarded when the C<end_manifold_document> is
+received.
 
-If the root element end_element event for the first document won't
-arrive until after all the intermediate documents, call the
-disable_buffering() option.
+=head1 DETAILED DESCRIPTION
 
-NOTE: All "between document" events are passed on, which is important for
-splitters like L<XML::Filter::DocSplitter> that like to start and end several
-documents and emit stuff directly to the merger before, after and in between
-those documents.
+In case the above was a bit vague, here are the rules this filter lives
+by.
 
-TODO: Allow a lot of customization, like how deep to cut the roots off
-of each document (it just cuts down to and including the root element
-now), and allow some "glue" to be wrapped around each document and
-between documents.
+For the master document:
+
+=over
+
+=item *
+
+Events before the root C<end_element> are forwarded as received.
+Because of the rules for secondary documents, any secondary documents
+sent to the filter in the midst of a master document will be
+inserted inline as their events are received.
+
+
+=item *
+
+All remaining events, from the root C<end_element> are
+buffered until the end_manifold_document() received, and are then
+forwarded on.
+
+=back
+
+For secondary documents:
+
+=over
+
+=item *
+
+All events before the root C<start_element> are discarded.  There is
+no way to recover these (though we can add an option for most non-DTD
+events, I believe).
+
+=item *
+
+The root C<start_element> is discarded by default, or forwarded if
+C<set_include_all_roots( $v )> has been used to set a true value.
+
+=item *
+
+All events up to, but not including, the root C<end_element> are
+forwarded as received.
+
+=item *
+
+The root C<end_element> is discarded or forwarded if the matching
+C<start_element> was.
+
+=item *
+
+All remaining events until and including the C<end_document> are
+forwarded and processing.
+
+=item *
+
+Secondary documents may contain other secondary documents.
+
+=item *
+
+Secondary documents need not be well formed.  The must, however, be well
+balanced.
+
+=back
+
+This requires very little buffering and is "most natural" with the
+limitations:
+
+=over
+
+=item *
+
+All of each secondary document's events must all be received
+between two consecutive events of it's master document.  This is because
+most master document events are not buffered and this filter cannot
+tell from which upstream source a document came.
+
+=item *
+
+If the master document should happen to have some egregiously large
+amount of whitespace, commentary, or illegal events after the root
+element, buffer memory could be huge.  This should be exceedingly rare,
+even non-existent in the real world.
+
+=item *
+
+If any documents are not well balanced, the result won't be.
+
+=item *
+
+=back
+
+=head1 LIMITATIONS
+
+The events before and after a secondary document's root element events
+are discarded.  It is conceivable that characters, PIs and commentary
+outside the root element might need to be kept.  This may be added as an
+option.
+
+The DocumentLocators are not properly managed: they should be saved and
+restored around each each secondary document.
+
+If either of these bite you, contact me.
 
 =cut
 
 use base qw( XML::SAX::Base );
 
-$VERSION = 0.1;
+$VERSION = 0.2;
 
 use strict;
 use Carp;
 use XML::SAX::EventMethodMaker qw( sax_event_names compile_missing_methods );
+
+sub _logging() { 0 };
 
 =head1 METHODS
 
@@ -84,53 +186,125 @@ handler's start_document.
 
 sub start_manifold_document {
     my $self = shift;
+    $self->{DocumentDepth}           = 0;
     $self->{DocumentCount}           = 0;
     $self->{TailEvents}              = undef;
-    $self->{Depth}                   = 0;
     $self->{ManifoldDocumentStarted} = 1;
     $self->{Cutting}                 = 0;
+    $self->{Depth}                   = 0;
+    $self->{RootEltSeen}             = 0;
 
 ## A little fudging here until XML::SAX::Base gets a new release
 $self->{Methods} = {};
+}
 
-    $self->SUPER::start_document( @_ );
+
+sub _log {
+    my $self = shift;
+
+    warn "MERGER: ",
+        $self->{DocumentCount}, " ",
+        "| " x $self->{DocumentDepth},
+        ". " x $self->{Depth},
+        @_,
+        "\n";
+}
+
+
+sub _cutting {
+    my $self = shift;
+
+#    if ( @_ ) {
+#        my $v = shift;
+#warn "MERGER: CUTTING ", $v ? "SET!!" : "CLEARED!!", "\n"
+#   if ( $v && ! $self->{Cutting} ) || ( ! $v && $self->{Cutting} );
+#        $self->{Cutting} = $v;
+#    }
+
+    my $v = shift;
+
+    $v = 1
+        if ! defined $v
+            && ( $self->{DocumentCount} > 1
+               || $self->{DocumentDepth} > 1
+            )
+            && ! $self->{Depth};
+
+
+    $self->_log(
+        $v ? () : "NOT ",
+        "CUTTING ",
+        do { my $c = (caller(1))[3]; $c =~ s/.*:://; $c }, 
+        " (doccount=$self->{DocumentCount}",
+        " docdepth=$self->{DocumentDepth}",
+        " depth=$self->{Depth})"
+    ) if _logging;
+    return $v;
+
+    return $self->{Cutting};
+}
+
+
+sub _saving {
+    my $self = shift;
+
+    return
+        $self->{DocumentCount} == 1
+        && $self->{DocumentDepth} == 1
+        && $self->{RootEltSeen};
+}
+
+
+sub _push {
+    my $self = shift;
+
+    $self->_log( "SAVING ", $_[0] ) if _logging;
+
+    push @{$self->{TailEvents}}, [ @_ ];
+
+    return undef;
 }
 
 
 sub start_document {
     my $self = shift;
+
     warn "start_document received without a start_manifold_document"
         unless $self->{ManifoldDocumentStarted};
-    ++$self->{DocumentCount};
-    ## Consume these.
-    $self->{Cutting} = $self->{DocumentCount} > 1;
-#    warn "CUTTING SET!!" if $self->{Cutting};
+
+    push @{$self->{DepthStack}}, $self->{Depth};
+
+    ++$self->{DocumentCount} unless $self->{DocumentDepth};
+    ++$self->{DocumentDepth};
+    $self->{Depth} = 0;
+
+    $self->SUPER::start_document( @_ )
+        unless $self->_cutting;
+
 }
 
 sub end_document {
     my $self = shift;
-#    warn $self->{DocumentCount} == 1 ? "SAVING!!!" : "CUTTING!!!";
-    push @{$self->{TailEvents}}, [ "end_document", @_ ]
-        if $self->{DocumentCount} == 1;
-#    warn "CUTTING CLEARED!!!" if $self->{Cutting};
-    $self->{Cutting} = 0;
+
+    $self->_push( "end_document", @_ )
+        unless $self->_cutting;
+
+    --$self->{DocumentDepth};
+    $self->{Depth} = pop @{$self->{DepthStack}};
 }
 
 
 sub start_element {
     my $self = shift ;
 
-    my $depth = $self->{Depth}++;
-    if (   $self->{DocumentCount} == 1
-        || $depth
-	|| $self->{IncludeAllRoots}
-    ) {
-#    warn "CUTTING CLEARED!!" if $self->{Cutting};
-        $self->{Cutting} = 0;
-	return $self->SUPER::start_element( @_ )
-    }
+    my $r;
 
-    return undef ;
+    $r = $self->SUPER::start_element( @_ )
+        unless $self->_cutting( $self->{IncludeAllRoots} ? 0 : () );
+
+    ++$self->{Depth};
+
+    return $r;
 }
 
 
@@ -138,33 +312,24 @@ sub end_element {
     my $self = shift ;
 
     --$self->{Depth};
+    $self->{RootEltSeen} ||= $self->{DocumentDepth} == 1 && $self->{Depth} == 0;
 
-    if ( $self->{DocumentCount} == 1 && ! $self->{Depth} ) {
-        $self->{TailEvents} = [ [ "end_element", @_ ] ];
-    }
-    elsif ( $self->{Depth} || $self->{IncludeAllRoots} ) {
-        return $self->SUPER::end_element( @_ )
-    }
+    return undef if $self->_cutting( $self->{IncludeAllRoots} ? 0 : () );
 
-    $self->{Cutting} = 1 unless $self->{Depth};
-#    warn "CUTTING SET!!" if $self->{Cutting};
-
-    return undef ;
+    return $self->_saving
+        ? $self->_push( "end_element", @_ )
+        : $self->SUPER::end_element( @_ );
 }
 
 compile_missing_methods __PACKAGE__, <<'TEMPLATE_END', sax_event_names;
 sub <EVENT> {
     my $self = shift;
-    if (   $self->{DocumentCount} == 1
-        && $self->{Cutting} 
-    ) {
-#    warn "SAVING!!!";
-	push @{$self->{TailEvents}}, [ "<EVENT>", @_ ];
-	return;
-    }
-    return $self->SUPER::<EVENT>( @_ ) unless $self->{Cutting};
-#    warn "CUTTING!!!";
-    return undef;
+
+    return undef if $self->_cutting;
+
+    return $self->_saving
+        ? $self->_push( "<EVENT>", @_ )
+        : $self->SUPER::<EVENT>( @_ );
 }
 TEMPLATE_END
 
@@ -185,8 +350,9 @@ sub end_manifold_document {
     my $r;
     if ( $self->{TailEvents} ) {
 	for ( @{$self->{TailEvents}} ) {
-	    my $sub_name = "SUPER::" . shift @$_;
-#            warn "PLAYING BACK!!";
+	    my $sub_name = shift @$_;
+            $self->_log( "PLAYING BACK $sub_name" ) if _logging;
+            $sub_name = "SUPER::$sub_name";
 	    $r = $self->$sub_name( @$_ );
 	}
     }
