@@ -811,7 +811,13 @@ if ( ! $type ) {
             ## delaying the new()s might help us from doing things
             ## like blowing away output files and then finding
             ## errors, for instance.
-            eval "require $spec; 1" or die $@;
+            no strict "refs";
+            unless ( eval "require $spec; 1" ) {
+                ## Assume it was loaded somehow else if it's got some
+                ## values in residence.
+                ## TODO: be more sophisticated here
+                die $@ unless $spec->can( "new" );
+            }
         }
     }
     else {

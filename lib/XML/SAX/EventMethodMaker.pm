@@ -55,7 +55,12 @@ provides the database of handler names, queryable by type, and
 =cut
 
 @ISA = qw( Exporter );
-@EXPORT_OK = qw( sax_event_names missing_methods compile_methods );
+@EXPORT_OK = qw(
+    sax_event_names 
+    missing_methods 
+    compile_methods 
+    compile_missing_methods
+);
 %EXPORT_TAGS = ( all => \@EXPORT_OK );
 
 use strict ;
@@ -322,7 +327,7 @@ Shorthand for calls like
 sub compile_missing_methods {
     my ( $where, $template ) = ( shift, shift );
 
-    compile_methods $_[0], $_[1], missing_methods $_[0], @_[2..$#_];
+    compile_methods $where, $template, missing_methods $where, @_;
 }
 
 =back

@@ -2,7 +2,7 @@ use ExtUtils::MakeMaker;
 
 WriteMakefile(
     NAME          => 'XML::SAX::Machines',
-    VERSION       => 0.2,
+    VERSION       => 0.3,
     PREREQ_PM => {
        "XML::SAX"          => 0,
     },

@@ -19,6 +19,10 @@ sub {
     );
     $m->Intake->set_aggregator( $m->Merger );
     ok $m->isa( "XML::SAX::Machine" );
+#use XML::Handler::Machine2GraphViz;
+#open FOO, ">foo.png" or die $!;
+#print FOO machine2graphviz( $m )->as_png;
+#close FOO;
 },
 
 sub {

@@ -6,8 +6,10 @@ README
 TODO
 examples/output_to_process
 lib/XML/Filter/Distributor.pm
+lib/XML/Filter/DocSplitter.pm
 lib/XML/Filter/Merger.pm
 lib/XML/Filter/Tee.pm
+lib/XML/SAX/ByRecord.pm
 lib/XML/SAX/EventMethodMaker.pm
 lib/XML/SAX/Machine.pm
 lib/XML/SAX/Machines.pm
@@ -23,9 +25,12 @@ t/00valid_name.t
 t/01compile_spec.t
 t/02find_part.t
 t/09machine.t
+t/09merger.t
 t/10distributor.t
+t/10docsplitter.t
 t/10pipeline.t
 t/10tap.t
+t/11byrecord.t
 t/11manifold.t
 t/20saxt.t
 t/lib/XML/Filter/SAXT.pm

@@ -19,14 +19,14 @@ XML::SAX::Manifold - Multipass processing of documents
 
 =head1 DESCRIPTION
 
-XML::SAX::Manifold is a SAX filter that allows "multipass" processing of
-a document by sending the document through several channels of SAX
+XML::SAX::Manifold is a SAX machine that allows "multipass" processing
+of a document by sending the document through several channels of SAX
 processors one channel at a time.  A channel may be a single SAX
 processor or a pipeline (see L<XML::SAX::Pipeline>).
 
 The results of each channel are aggregated by a SAX filter that supports
-the C<end_all> event, C<XML::Filter::Merger> by default.  See the section
-on writing an aggregator and L<XML::Filter::Merger>.
+the C<end_all> event, C<XML::Filter::Merger> by default.  See the
+section on writing an aggregator and L<XML::Filter::Merger>.
 
 This differs from L<XML::Filter::SAXT> in that the channels are
 prioritized and each channel receives all events for a document before

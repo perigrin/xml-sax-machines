@@ -16,13 +16,13 @@ XML::SAX::Tap - Tap a pipeline of SAX processors
 
 =head1 DESCRIPTION
 
-XML::SAX::Tap is a SAX filter that passes each event it receives on to a
-brach handler and then on down to it's main handler.  This allows
+XML::SAX::Tap is a SAX machine that passes each event it receives on to
+a brach handler and then on down to it's main handler.  This allows
 debugging output, logging output, validators, and other processors (and
 machines, of course) to be placed in a pipeline.  This differs from
-L<XML::Filter::Tee>, L<XML::Filter::SAXT> and L<XML::SAX::Distributer> in
-that a tap is also a pipeline; it contains the processoring that handles
-the tap.
+L<XML::Filter::Tee>, L<XML::Filter::SAXT> and L<XML::SAX::Distributer>
+in that a tap is also a pipeline; it contains the processoring that
+handles the tap.
 
 It's like L<XML::Filter::Tee> in that the events are not buffered; each
 event is sent first to the tap, and then to the branch (this is
@@ -80,7 +80,7 @@ sub new {
 
     my $stage_number = 0;
     my @machine_spec = (
-        [ "Tee", "XML::Filter::Tee"  ],
+        [ "Intake", "XML::Filter::Tee"  ],
         map( [ "Stage_" . $stage_number++, $_ ], @_ ),
     );
 
@@ -90,8 +90,6 @@ sub new {
     ## Pushing this last means that the Exhaust will get
     ## events after Stage_0
     push @{$machine_spec[0]}, "Exhaust";
-
-    $machine_spec[0]->[0] = "Intake" if @machine_spec;
 
     return $proto->SUPER::new( @machine_spec, $options );
 }

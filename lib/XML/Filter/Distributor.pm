@@ -21,7 +21,7 @@ XML::Filter::Distributor - Multipass processing of documents
         [ Output => \*STDOUT ],
     );
 
-    ## Let the distributor coordinate with the joiner.
+    ## Let the distributor coordinate with the merger.
     ## XML::SAX::Manifold does this for you.
     $m->Intake->set_aggregator( $m->Merger );
 

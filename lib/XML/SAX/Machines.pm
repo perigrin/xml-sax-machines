@@ -50,6 +50,24 @@ anything:
 More documentation to come; see L<XML::SAX::Pipeline>,
 L<XML::SAX::Manifold>, and L<XML::SAX::Machine> for now.
 
+Here are the machines this module knows about:
+
+    ByRecord  Record oriented processing of documents.
+              L<XML::SAX::ByRecord>
+
+    Machine   Generic "directed graph of SAX processors" machines.
+              L<XML::SAX::Machine>
+
+    Manifold  Multipass document processing
+              L<XML::SAX::Manifold>
+
+    Pipeline  A linear sequence of SAX processors
+              L<XML::SAX::Pipeline>
+
+    Tap       An insertable pass through that examines the
+              events without altering them using SAX processors.
+              L<XML::SAX::Tap>
+
 =cut
 
 use strict;
@@ -62,9 +80,10 @@ $VERSION = 0.003;
 ## TODO: Load this mapping from the config file, or generalize 
 ## this.
 my %machines = (
+    ByRecord    => "XML::SAX::ByRecord",
     Machine     => "XML::SAX::Machine",
-    Pipeline    => "XML::SAX::Pipeline",
     Manifold    => "XML::SAX::Manifold",
+    Pipeline    => "XML::SAX::Pipeline",
     Tap         => "XML::SAX::Tap",
 );
 
@@ -294,8 +313,8 @@ sub expected_processor_class_options {
         for @_;
 }
 
-=back
-
-=cut
+#=back
+#
+#=cut
 
 1;

@@ -22,7 +22,7 @@ XML::Filter::Merger - Assemble multiple SAX streams in to one document
 
 =head1 DESCRIPTION
 
-Combines several documents in to one.  Here's how:
+Combines several documents in to one.  Here's how it works (by default):
 
 The first document received after the call to start_manifold_document()
 is emitted all the way up to it's closing root element tag.  This tag
@@ -38,6 +38,15 @@ When the end_manifold_document() method is called, the events that were
 buffered from the first document are then emitted, resulting in a well
 formed XML document that has the guts from each of the input documents
 sandwiched between the head and tail of the first document.
+
+If the root element end_element event for the first document won't
+arrive until after all the intermediate documents, call the
+disable_buffering() option.
+
+NOTE: All events are passed on, which is important for splitters like
+L<XML::Filter::DocSplitter> that like to start and end several documents
+and emit stuff directly to the merger before, after and in between those
+documents.
 
 TODO: Allow a lot of customization, like how deep to cut the roots off
 of each document (it just cuts down to and including the root element
@@ -74,9 +83,9 @@ handler's start_document.
 
 sub start_manifold_document {
     my $self = shift;
-    $self->{DocumentCount} = 0;
-    $self->{RootEndEltData} = undef;
-    $self->{Depth} = 0;
+    $self->{DocumentCount}           = 0;
+    $self->{RootEndEltData}          = undef;
+    $self->{Depth}                   = 0;
     $self->{ManifoldDocumentStarted} = 1;
 
 ## A little fudging here until XML::SAX::Base gets a new release
@@ -103,7 +112,9 @@ sub start_element {
     my $self = shift ;
 
     return $self->SUPER::start_element( @_ )
-        if $self->{Depth}++ || $self->{DocumentCount} == 1;
+        if $self->{Depth}++
+            || $self->{DocumentCount} == 1
+            || $self->{IncludeAllRoots};
 
     return undef ;
 }
@@ -112,12 +123,12 @@ sub start_element {
 sub end_element {
     my $self = shift ;
 
-    $self->{RootEndEltData} = [ @_ ]
-        if ! --$self->{Depth} && $self->{DocumentCount} == 1;
-
-    return $self->SUPER::end_element( @_ )
-        if $self->{Depth} ;
-
+    if ( ! --$self->{Depth} && $self->{DocumentCount} == 1 ) {
+        $self->{RootEndEltData} = [ @_ ];
+    }
+    elsif ( $self->{Depth} || $self->{IncludeAllRoots} ) {
+        return $self->SUPER::end_element( @_ )
+    }
 
     return undef ;
 }
@@ -134,12 +145,63 @@ end_element() for the root element to be passed on.
 
 sub end_manifold_document {
     my $self = shift;
-    $self->end_element( @{$self->{RootEndEltData}} );
+    $self->end_element( @{$self->{RootEndEltData}} )
+        if $self->{RootEndEltData};
     $self->{ManifoldDocumentStarted} = 0;
     return $self->SUPER::end_document( @_ );
 }
 
+=item set_include_all_roots
+
+    $h->set_include_all_roots( 1 );
+
+Setting this option causes the merger to include all root element nodes,
+not just the first document's.  This means that later documents are
+treated as subdocuments of the output document, rather than as envelopes
+carrying subdocuments.
+
+Given two documents received are:
+
+ Doc1:   <root1><foo></root1>
+
+ Doc1:   <root2><bar></root2>
+
+ Doc3:   <root3><baz></root3>
+
+then with this option cleared (the default), the result looks like:
+
+    <root1><foo><bar><baz></root1>
+
+.  This is useful when processing document oriented XML and each
+upstream filter channel gets a complete copy of the document.  This is
+the case with the machine L<XML::SAX::Manifold> and the splitting filter
+L<XML::Filter::Distributor>.
+
+With this option set, the result looks like:
+
+    <root1><foo><root2><bar></root2><root3><baz></root3></root1>
+
+This is useful when processing record oriented XML, where the first
+document only contains the preamble and postamble for the records and
+not all of the records.  This is the case with the machine
+L<XML::SAX::ByRecord> and the splitting filter
+L<XML::Filter::DocSplitter>.
+
+The two splitter filters mentioned set this feature appropriately.
+
+=cut
+
+sub set_include_all_roots {
+    my $self = shift;
+    $self->{IncludeAllRoots} = shift;
+}
+
 =back
+
+=head1 BUGS
+
+Does not yet buffer all events after the first document's root end_element
+event.
 
 =head1 AUTHOR
 
