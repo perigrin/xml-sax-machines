@@ -1496,8 +1496,8 @@ sub string_description {
     return join( 
         "",
         $self->{Name}
-            ? "$self->{Name}"
-            : "#", $self->{Number},
+            ? $self->{Name}
+            : ( "#", $self->{Number} ),
         " (",
         $self->{Processor}
             ? ( ref $self->{Processor} || $self->{Processor} )

@@ -8,9 +8,15 @@ XML::SAX::Tap - Tap a pipeline of SAX processors
 
     use XML::SAX::Machines qw( Pipeline Tap ) ;
 
-    my $d = Pipeline(
+    my $m = Pipeline(
         "UpstreamFilter",
         Tap( "My::Reformatter", \*STDERR ),
+        "DownstreamFilter",
+    );
+
+    my $m = Pipeline(
+        "UpstreamFilter",
+        Tap( "| xmllint --format -" ),
         "DownstreamFilter",
     );
 

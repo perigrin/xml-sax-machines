@@ -1,7 +1,7 @@
 use strict;
 
 use Test;
-use XML::SAX::ParserFactory;
+use XML::SAX::PurePerl;
 use XML::Filter::Merger;
 use XML::SAX::Writer;
 use UNIVERSAL;
@@ -15,7 +15,7 @@ my @tests = (
 sub {
     my $w = XML::SAX::Writer->new( Output => \$out );
     $h = XML::Filter::Merger->new( Handler => $w );
-    $p = XML::SAX::ParserFactory->parser( Handler => $h );
+    $p = XML::SAX::PurePerl->new( Handler => $h );
     ok UNIVERSAL::isa( $h, "XML::Filter::Merger" );
 },
 

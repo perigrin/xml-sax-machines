@@ -211,9 +211,13 @@ sub start_element {
         ++$self->{Splitting};
         $self->SUPER::start_document( {} );
     }
+    elsif ( $self->{Splitting} ) {
+        ++$self->{Splitting};
+    }
 
-    return $self->SUPER::start_element( @_ )
-        if $self->{Splitting};
+    if ( $self->{Splitting} ) {
+        return $self->SUPER::start_element( @_ );
+    }
 
     $self->{AggregatorPassThrough}->start_element( @_ )
         if $self->{AggregatorPassThrough};

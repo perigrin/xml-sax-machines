@@ -75,7 +75,7 @@ use Carp;
 use Exporter;
 use vars qw( $debug $VERSION @ISA @EXPORT_OK %EXPORT_TAGS );
 
-$VERSION = 0.003;
+$VERSION = 0.31;
 
 ## TODO: Load this mapping from the config file, or generalize 
 ## this.
