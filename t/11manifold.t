@@ -5,6 +5,7 @@ use strict;
 use Test;
 use XML::SAX::Machines qw( Pipeline Manifold );
 
+
 my $m;
 
 my $out;
@@ -29,7 +30,7 @@ sub {
     $out = "";
 #    $m->trace_all_parts;
 #    Devel::TraceSAX::trace_SAX( $m, "Pipeline" );
-    $m->parse_string( "<foo><bar /></foo>" );
+    $m->parse_string( "<?xml version='1.0'?><?pi pi?><!--cmnt--><foo><bar /></foo><?pi2 pi2?><!--cmnt2-->" );
     ok 1;
 },
 

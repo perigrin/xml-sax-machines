@@ -43,10 +43,10 @@ If the root element end_element event for the first document won't
 arrive until after all the intermediate documents, call the
 disable_buffering() option.
 
-NOTE: All events are passed on, which is important for splitters like
-L<XML::Filter::DocSplitter> that like to start and end several documents
-and emit stuff directly to the merger before, after and in between those
-documents.
+NOTE: All "between document" events are passed on, which is important for
+splitters like L<XML::Filter::DocSplitter> that like to start and end several
+documents and emit stuff directly to the merger before, after and in between
+those documents.
 
 TODO: Allow a lot of customization, like how deep to cut the roots off
 of each document (it just cuts down to and including the root element
@@ -61,6 +61,7 @@ $VERSION = 0.1;
 
 use strict;
 use Carp;
+use XML::SAX::EventMethodMaker qw( sax_event_names compile_missing_methods );
 
 =head1 METHODS
 
@@ -84,9 +85,10 @@ handler's start_document.
 sub start_manifold_document {
     my $self = shift;
     $self->{DocumentCount}           = 0;
-    $self->{RootEndEltData}          = undef;
+    $self->{TailEvents}              = undef;
     $self->{Depth}                   = 0;
     $self->{ManifoldDocumentStarted} = 1;
+    $self->{Cutting}                 = 0;
 
 ## A little fudging here until XML::SAX::Base gets a new release
 $self->{Methods} = {};
@@ -101,20 +103,32 @@ sub start_document {
         unless $self->{ManifoldDocumentStarted};
     ++$self->{DocumentCount};
     ## Consume these.
+    $self->{Cutting} = $self->{DocumentCount} > 1;
+#    warn "CUTTING SET!!" if $self->{Cutting};
 }
 
 sub end_document {
     my $self = shift;
+#    warn $self->{DocumentCount} == 1 ? "SAVING!!!" : "CUTTING!!!";
+    push @{$self->{TailEvents}}, [ "end_document", @_ ]
+        if $self->{DocumentCount} == 1;
+#    warn "CUTTING CLEARED!!!" if $self->{Cutting};
+    $self->{Cutting} = 0;
 }
 
 
 sub start_element {
     my $self = shift ;
 
-    return $self->SUPER::start_element( @_ )
-        if $self->{Depth}++
-            || $self->{DocumentCount} == 1
-            || $self->{IncludeAllRoots};
+    my $depth = $self->{Depth}++;
+    if (   $self->{DocumentCount} == 1
+        || $depth
+	|| $self->{IncludeAllRoots}
+    ) {
+#    warn "CUTTING CLEARED!!" if $self->{Cutting};
+        $self->{Cutting} = 0;
+	return $self->SUPER::start_element( @_ )
+    }
 
     return undef ;
 }
@@ -123,15 +137,37 @@ sub start_element {
 sub end_element {
     my $self = shift ;
 
-    if ( ! --$self->{Depth} && $self->{DocumentCount} == 1 ) {
-        $self->{RootEndEltData} = [ @_ ];
+    --$self->{Depth};
+
+    if ( $self->{DocumentCount} == 1 && ! $self->{Depth} ) {
+        $self->{TailEvents} = [ [ "end_element", @_ ] ];
     }
     elsif ( $self->{Depth} || $self->{IncludeAllRoots} ) {
         return $self->SUPER::end_element( @_ )
     }
 
+    $self->{Cutting} = 1 unless $self->{Depth};
+#    warn "CUTTING SET!!" if $self->{Cutting};
+
     return undef ;
 }
+
+compile_missing_methods __PACKAGE__, <<'TEMPLATE_END', sax_event_names;
+sub <EVENT> {
+    my $self = shift;
+    if (   $self->{DocumentCount} == 1
+        && $self->{Cutting} 
+    ) {
+#    warn "SAVING!!!";
+	push @{$self->{TailEvents}}, [ "<EVENT>", @_ ];
+	return;
+    }
+    return $self->SUPER::<EVENT>( @_ ) unless $self->{Cutting};
+#    warn "CUTTING!!!";
+    return undef;
+}
+TEMPLATE_END
+
 
 
 =item end_manifold_document
@@ -145,10 +181,17 @@ end_element() for the root element to be passed on.
 
 sub end_manifold_document {
     my $self = shift;
-    $self->end_element( @{$self->{RootEndEltData}} )
-        if $self->{RootEndEltData};
+
+    my $r;
+    if ( $self->{TailEvents} ) {
+	for ( @{$self->{TailEvents}} ) {
+	    my $sub_name = "SUPER::" . shift @$_;
+#            warn "PLAYING BACK!!";
+	    $r = $self->$sub_name( @$_ );
+	}
+    }
     $self->{ManifoldDocumentStarted} = 0;
-    return $self->SUPER::end_document( @_ );
+    return $r;
 }
 
 =item set_include_all_roots

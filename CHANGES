@@ -1,5 +1,10 @@
 CHANGES file for XML-SAX-Machines
 
+0.34 Thu Mar 21 09:55:46 EST 2002
+    - Get Merger.pm to properly deal with events before and
+      after the root element events.  Reported by
+      ASSAD Arnaud <arnaud@cruncher.underlands.org>
+
 0.33 Tue Mar 19 10:59:42 EST 2002
     - Port back to perl5.00503 (reported by Kip Hampton
         - no named regexp character classes ([...[:alpha:]...])
