@@ -190,18 +190,6 @@ If any documents are not well balanced, the result won't be.
 
 =back
 
-=head1 LIMITATIONS
-
-The events before and after a secondary document's root element events
-are discarded.  It is conceivable that characters, PIs and commentary
-outside the root element might need to be kept.  This may be added as an
-option.
-
-The DocumentLocators are not properly managed: they should be saved and
-restored around each each secondary document.
-
-If either of these bite you, contact me.
-
 =cut
 
 use base qw( XML::SAX::Base );
@@ -360,11 +348,21 @@ sub start_document {
 sub end_document {
     my $self = shift;
 
-    $self->_push( "end_document", @_ )
-        unless $self->_cutting;
+    my $r;
+
+    unless ( $self->_cutting ) {
+        if ( $self->_saving ) {
+            $self->_push( "end_document", @_ );
+        }
+        else {
+            $r = $self->SUPER::end_document( @_ );
+        }
+    }
 
     --$self->{DocumentDepth};
     $self->{Depth} = pop @{$self->{DepthStack}};
+
+    return $r;
 }
 
 
@@ -406,6 +404,69 @@ sub <EVENT> {
         : $self->SUPER::<EVENT>( @_ );
 }
 TEMPLATE_END
+
+=head1 Additional Methods
+
+These are provided to make it easy for subclasses to find out roughly
+where they are in the document structure.  Generally, these should be
+called after calling SUPER::start_...() and before calling
+SUPER::end_...() to be accurate.
+
+=over
+
+=item in_master_document
+
+Returns TRUE if the current event is in the first top level document.
+
+=cut
+
+sub in_master_document {
+    my $self = shift;
+
+    return $self->{DocumentCount} == 1 && $self->{DocumentDepth} <= 1;
+}
+
+=item document_depth
+
+Gets how many nested documents surround the current document.  0 means that you
+are in a top level document.  In manifold mode, This may or may not be a
+secondary document: secondary documents may also follow the primary
+document, in which case they have a document depth of 0.
+
+=cut
+
+sub document_depth {
+    shift->{DocumentDepth} - 1;
+}
+
+
+
+=item element_depth
+
+Gets how many nested elements surround the current element in the
+current input document.  Does not count elements from documents
+surrounding this document.
+
+=cut
+
+sub element_depth {
+    shift->{Depth} - 1;
+}
+
+
+=item top_level_document_number
+
+Returns the number of the top level document in a manifold document.
+This is 0 for the first top level document, which is always the master
+document.
+
+=cut
+
+sub top_level_document_number {
+    shift->{DocumentCount} - 1;
+}
+
+
 
 
 
@@ -482,10 +543,20 @@ sub set_include_all_roots {
 
 =back
 
-=head1 BUGS
+=head1 LIMITATIONS
+
+The events before and after a secondary document's root element events
+are discarded.  It is conceivable that characters, PIs and commentary
+outside the root element might need to be kept.  This may be added as an
+option.
+
+The DocumentLocators are not properly managed: they should be saved and
+restored around each each secondary document.
 
 Does not yet buffer all events after the first document's root end_element
 event.
+
+If these bite you, contact me.
 
 =head1 AUTHOR
 

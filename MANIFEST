@@ -4,6 +4,7 @@ MANIFEST.SKIP
 Makefile.PL
 README
 TODO
+examples/append_to_xml_file
 examples/output_to_process
 examples/xml_records_thru_libxslt
 examples/xml_records_to_data_structures

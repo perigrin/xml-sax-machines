@@ -1,5 +1,13 @@
 CHANGES file for XML-SAX-Machines
 
+0.40
+    - Add several state getter methods to XML::Filter::Merger to
+      make subclassing easier.
+
+0.39 Fri Sep  6 11:44:23 EDT 2002
+    - Get end_document to return the next handler's end_document()
+      result when not in manifold mode.
+
 0.38 Fri Sep  6 10:05:32 EDT 2002
     - Require XML::SAX::Writer > 0.41.
     - Allow merger to be subclassed

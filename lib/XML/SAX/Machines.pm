@@ -1,6 +1,6 @@
 package XML::SAX::Machines;
 
-$VERSION = 0.38;
+$VERSION = 0.40;
 
 =head1 NAME
 
