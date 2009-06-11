@@ -1,6 +1,6 @@
 package XML::SAX::Machines;
 
-$VERSION = 0.41;
+$VERSION = 0.42;
 
 =head1 NAME
 
@@ -318,3 +318,16 @@ sub expected_processor_class_options {
 #=cut
 
 1;
+__END__
+
+=head1 AUTHORS
+
+Barrie Slaymaker
+
+=head1 LICENCE
+
+Copyright 2002-2009 by Barrie Slaymaker.
+
+This software is free.  It is licensed under the same terms as Perl itself.
+
+=cut
