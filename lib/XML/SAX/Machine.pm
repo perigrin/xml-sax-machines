@@ -1468,13 +1468,8 @@ sub new {
     my $proto = shift;
     my $class = ref $proto || $proto;
 
-    my $self = do {
-        no strict 'refs';
-        bless [ \%{ "${class}::FIELDS" } ];
-    };
-
-    ## Pseudo hashes are badly borken in older Perls.  Should use something
-    ## else, really.
+    my $self = bless {}, $class;
+    
     my %options = @_ ;
     $self->{$_} = $options{$_} for keys %options;
 
