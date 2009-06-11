@@ -10,3 +10,5 @@
 
 - Allow Manifold to be used to merge documents:
     Manifold( Parser, Parser, Parser )->parse;
+
+- Change from Test.pm to Test::More

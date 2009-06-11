@@ -1,4 +1,7 @@
 CHANGES file for XML-SAX-Machines
+0.42 ???
+    - remove psudo hashes (RT #1523)
+    - Update packaging to use Module::Install
 
 0.41 Tue Jan 20 11:57:39 EST 2004
     - XML::SAX::Pipeline SYNOPSIS doc fixed (reported by bplatz a t
