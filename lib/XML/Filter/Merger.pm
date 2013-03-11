@@ -1,5 +1,7 @@
 package XML::Filter::Merger;
 
+# ABSTRACT: Assemble multiple SAX streams in to one document
+
 =head1 NAME
 
 XML::Filter::Merger - Assemble multiple SAX streams in to one document
@@ -204,8 +206,6 @@ If any documents are not well balanced, the result won't be.
 =cut
 
 use base qw( XML::SAX::Base );
-
-$VERSION = 0.2;
 
 use strict;
 use Carp;

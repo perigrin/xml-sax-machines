@@ -1,5 +1,7 @@
 package XML::SAX::Machines::ConfigHelper;
 
+# ABSTRACT: lib/XML/SAX/Machines/ConfigHelper.pm
+
 =head1 NAME
 
 XML::SAX::Machine::ConfigHelper - rarely needed config routines.

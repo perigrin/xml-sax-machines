@@ -1,4 +1,5 @@
 package XML::SAX::Pipeline;
+# ABSTRACT: Manage a linear pipeline of SAX processors
 
 =head1 NAME
 
@@ -108,7 +109,6 @@ tap in a pipeline (or other machine):
 
 use base qw( XML::SAX::Machine );
 
-$VERSION = 0.1;
 
 use strict;
 use Carp;

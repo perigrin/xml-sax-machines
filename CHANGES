@@ -1,5 +1,11 @@
 CHANGES file for XML-SAX-Machines
-0.42 ???
+
+{{$NEXT}}
+
+0.43      2013-03-11 00:37:03 America/New_York
+    - update to use Dist::Zilla and stop using Module::Install 
+
+0.42 Jun 11, 2009
     - remove psudo hashes (RT #1523)
     - Update packaging to use Module::Install
 

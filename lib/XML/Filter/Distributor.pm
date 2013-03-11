@@ -1,4 +1,5 @@
 package XML::Filter::Distributor;
+# ABSTRACT: Multipass processing of documents
 
 =head1 NAME
 
@@ -83,7 +84,6 @@ use XML::SAX::Base;
 
 @ISA = qw( XML::SAX::Base );
 
-$VERSION = 0.1;
 
 @EXPORT_OK = qw( Distributor );
 

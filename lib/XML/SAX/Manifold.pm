@@ -1,4 +1,5 @@
 package XML::SAX::Manifold;
+# ABSTRACT: Multipass processing of documents
 
 =head1 NAME
 
@@ -74,8 +75,6 @@ one document; see L<XML::Filter::Merger> for details.
 =cut
 
 use base qw( XML::SAX::Machine );
-
-$VERSION = 0.1;
 
 use strict;
 use Carp;

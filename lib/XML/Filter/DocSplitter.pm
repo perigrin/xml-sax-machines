@@ -1,4 +1,5 @@
 package XML::Filter::DocSplitter;
+# ABSTRACT: Multipass processing of documents
 
 =head1 NAME
 
@@ -62,8 +63,6 @@ This class is derived from L<XML::SAX::Base>, see that for details.
 use XML::SAX::Base;
 
 @ISA = qw( XML::SAX::Base );
-
-$VERSION = 0.2;
 
 @EXPORT_OK = qw( DocSplitter );
 
