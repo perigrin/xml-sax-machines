@@ -1,4 +1,5 @@
 package XML::SAX::ByRecord;
+# ABSTRACT: Record oriented processing of (data) documents
 
 =head1 NAME
 
@@ -148,8 +149,6 @@ and the My::Filter::Uc got three sets of events like:
 =cut
 
 use base qw( XML::SAX::Machine );
-
-$VERSION = 0.1;
 
 use strict;
 use Carp;

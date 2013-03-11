@@ -1,4 +1,5 @@
 package XML::Filter::Tee;
+# ABSTRACT: Send SAX events to multiple processor, with switching
 
 =head1 NAME
 
@@ -53,7 +54,6 @@ or later handlers will see the alterations.
 
 =cut
 
-$VERSION = 0.1;
 
 use strict;
 use Carp;

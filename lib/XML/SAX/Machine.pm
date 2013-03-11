@@ -1,4 +1,5 @@
 package XML::SAX::Machine;
+# ABSTRACT: Manage a collection of SAX processors
 
 =head1 NAME
 
@@ -141,7 +142,6 @@ SAX machines detect loops at construction time.
 
 =cut
 
-$VERSION=1.0;
 
 use strict;
 

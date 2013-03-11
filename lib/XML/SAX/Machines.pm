@@ -1,6 +1,6 @@
 package XML::SAX::Machines;
 
-$VERSION = 0.42;
+# ABSTRACT: manage collections of SAX processors
 
 =head1 NAME
 

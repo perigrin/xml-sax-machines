@@ -1,4 +1,5 @@
 package XML::SAX::Tap;
+# ABSTRACT: Tap a pipeline of SAX processors
 
 =head1 NAME
 
@@ -65,7 +66,6 @@ details about C<Intake> and C<Exhaust> ports).
 
 use base qw( XML::SAX::Machine );
 
-$VERSION = 0.1;
 
 use strict;
 use Carp;
