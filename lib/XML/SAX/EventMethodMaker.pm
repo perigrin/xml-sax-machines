@@ -1,6 +1,5 @@
 package XML::SAX::EventMethodMaker;
-
-$VERSION = 0.1;
+# ABSTRACT: SAX event names, creation of methods from templates
 
 =head1 NAME
 
