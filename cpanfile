@@ -19,6 +19,7 @@ requires "UNIVERSAL";
 requires "vars";
 requires "warnings";
 requires "XML::SAX::Base";
+requires "XML::SAX::Expat";
 requires "XML::SAX::ParserFactory";
 requires "XML::SAX::PurePerl";
 requires "XML::SAX::Writer";
