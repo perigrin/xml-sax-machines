@@ -2,6 +2,8 @@ CHANGES file for XML-SAX-Machines
 
 {{$NEXT}}
 
+0.44      2013-08-18 11:51:46 America/New_York
+
 0.43      2013-03-11 00:37:03 America/New_York
     - update to use Dist::Zilla and stop using Module::Install 
 
